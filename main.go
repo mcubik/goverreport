@@ -3,174 +3,104 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/mcubik/goverreport/report"
 	"github.com/olekukonko/tablewriter"
-	"golang.org/x/tools/cover"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
-	"sort"
-	"strings"
 )
 
 var (
 	coverprofile, thresholdType, sortBy, order string
-	threshold                                  int
+	threshold                                  float64
 )
 
-type config struct {
+type configuration struct {
 	Root       string   `yaml:"root"`
 	Exclusions []string `yaml:"exclusions"`
 }
 
 func init() {
 	flag.StringVar(&coverprofile, "coverprofile", "coverage.out", "Write a coverage profile to the file after all tests have passed")
-	flag.IntVar(&threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
+	flag.Float64Var(&threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
 	flag.StringVar(&thresholdType, "type", "block", "Use a specific metric for the threshold: block, line")
 	flag.StringVar(&sortBy, "sort", "filename", "Sort: filename, block, stmt, missing-blocks, missing-stmts")
 	flag.StringVar(&order, "order", "asc", "Sort order: asc, desc")
 }
 
 func main() {
+
 	flag.Parse()
-	fmt.Println(sortBy)
-	config := config{}
-	data, err := ioutil.ReadFile("coverreport.yml")
+	config, err := loadConfig()
 	if err != nil {
-		if !os.IsNotExist(err) {
-			panic(fmt.Sprintf("Error reading configuration file: %s", err))
-		}
-		fmt.Println("No config file")
-	} else {
-		if err := yaml.Unmarshal(data, &config); err != nil {
-			panic(fmt.Sprintf("Error loading settings: %v", err))
-		}
-		fmt.Println(config)
+		fmt.Println(fmt.Sprintf("Error loading configuration file: %s", err))
+		os.Exit(2)
+	}
+	report, err := report.GenerateReport(coverprofile, config.Root, config.Exclusions, sortBy, order)
+	if err != nil {
+		fmt.Println(fmt.Sprintf("Error generating the report: %s", err))
+		os.Exit(2)
 	}
 
-	profiles, err := cover.ParseProfiles(coverprofile)
-	if err != nil {
-		fmt.Println("Invalid coverprofile")
-		return
-	}
-	global := &coverage{name: "Total"}
-	coverByFile := make(map[string]*coverage)
-	for _, profile := range profiles {
-		fileName := strings.Replace(profile.FileName, config.Root+"/", "", -1)
-		skip := false
-		for _, exclusion := range config.Exclusions {
-			if strings.HasPrefix(fileName, exclusion) {
-				skip = true
-			}
-		}
-		if skip {
-			continue
-		}
-		fileCover, ok := coverByFile[fileName]
-		if !ok {
-			fileCover = &coverage{name: fileName}
-			coverByFile[fileName] = fileCover
-		}
-		for _, block := range profile.Blocks {
-			global.addBlock(block)
-			fileCover.addBlock(block)
-		}
+	printTable(report)
+	if !checkThreshold(threshold, report.Total, thresholdType) {
+		os.Exit(1)
 	}
 
+	os.Exit(0)
+
+}
+
+func printTable(report report.CoverReport) {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{
 		"File", "Blocks", "Missing", "Stmts", "Missing",
 		"Block cover %", "Stmt cover %"})
-	keys := sortedKeys(coverByFile, sortBy, order)
-	for _, key := range keys {
-		table.Append(coverByFile[key].report())
+	for _, fileCoverage := range report.Files {
+		table.Append(makeRow(fileCoverage))
 	}
-	table.SetFooter(global.report())
+	table.SetFooter(makeRow(report.Total))
 	table.Render()
+}
 
+func checkThreshold(threshold float64, total report.CoverInfo, thresholdType string) bool {
 	if threshold > 0 {
 		if thresholdType == "block" {
-			if global.blockCoverage() < threshold {
-				os.Exit(1)
+			if total.BlockCoverage < threshold {
+				return false
 			}
 		}
 		if thresholdType == "line" {
-			if global.stmtCoverage() < threshold {
-				os.Exit(1)
+			if total.StmtCoverage < threshold {
+				return false
 			}
 		}
 	}
+	return true
 }
 
-func sortedKeys(results map[string]*coverage, mode string, order string) []string {
-	keys := make([]string, 0, len(results))
-	for key, _ := range results {
-		keys = append(keys, key)
-	}
-	applyOrder := func(b bool) bool { return b }
-	if order == "desc" {
-		applyOrder = func(b bool) bool { return !b }
-	}
-	if mode == "filename" {
-		sort.Strings(keys)
-	} else if mode == "block" {
-		sort.Slice(keys, func(i, j int) bool {
-			return applyOrder(results[keys[i]].blockCoverage() < results[keys[j]].blockCoverage())
-		})
-	} else if mode == "stmt" {
-		sort.Slice(keys, func(i, j int) bool {
-			return applyOrder(results[keys[i]].stmtCoverage() < results[keys[j]].stmtCoverage())
-		})
-	} else if mode == "missing-blocks" {
-		sort.Slice(keys, func(i, j int) bool {
-			return applyOrder(results[keys[i]].missingBlocks() < results[keys[j]].missingBlocks())
-		})
-	} else if mode == "missing-blocks" {
-		sort.Slice(keys, func(i, j int) bool {
-			return applyOrder(results[keys[i]].missingStmts() < results[keys[j]].missingStmts())
-		})
+func loadConfig() (configuration, error) {
+	var conf configuration
+	data, err := ioutil.ReadFile("coverreport.yml")
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return conf, err
+		}
 	} else {
-		panic(fmt.Sprintf("Sort by %s is not implemented", mode))
+		if err := yaml.Unmarshal(data, &conf); err != nil {
+			return configuration{}, err
+		}
 	}
-	return keys
+	return conf, nil
 }
 
-type coverage struct {
-	name                                       string
-	blocks, stmts, coveredBlocks, coveredStmts int
-}
-
-func (c *coverage) blockCoverage() int {
-	return int(float64(c.coveredBlocks) / float64(c.blocks) * 100)
-}
-
-func (c *coverage) stmtCoverage() int {
-	return int(float64(c.coveredStmts) / float64(c.stmts) * 100)
-}
-
-func (c *coverage) missingBlocks() int {
-	return c.blocks - c.coveredBlocks
-}
-
-func (c *coverage) missingStmts() int {
-	return c.stmts - c.coveredStmts
-}
-
-func (c *coverage) addBlock(block cover.ProfileBlock) {
-	c.blocks++
-	c.stmts += block.NumStmt
-	if block.Count > 0 {
-		c.coveredBlocks++
-		c.coveredStmts += block.NumStmt
-	}
-}
-
-func (c *coverage) report() []string {
+func makeRow(c report.CoverInfo) []string {
 	return []string{
-		c.name,
-		fmt.Sprintf("%d", c.blocks),
-		fmt.Sprintf("%d", c.missingBlocks()),
-		fmt.Sprintf("%d", c.stmts),
-		fmt.Sprintf("%d", c.missingStmts()),
-		fmt.Sprintf("%d", c.blockCoverage()),
-		fmt.Sprintf("%d", c.stmtCoverage())}
+		c.Name,
+		fmt.Sprintf("%d", c.Blocks),
+		fmt.Sprintf("%d", c.MissingBlocks),
+		fmt.Sprintf("%d", c.Stmts),
+		fmt.Sprintf("%d", c.MissingStmts),
+		fmt.Sprintf("%.2f", c.BlockCoverage),
+		fmt.Sprintf("%.2f", c.StmtCoverage)}
 }

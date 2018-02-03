@@ -1,0 +1,95 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"path": "-u",
+			"revision": ""
+		},
+		{
+			"path": "get",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "mrz/kicZiUaHxkyfvC/DyQcr8Do=",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "ecdeabc65495df2dec95d7c4a4c3e021903035e5",
+			"revisionTime": "2017-10-02T20:02:53Z"
+		},
+		{
+			"checksumSHA1": "cJE7dphDlam/i7PhnsyosNWtbd4=",
+			"path": "github.com/mattn/go-runewidth",
+			"revision": "97311d9f7767e3d6f422ea06661bc2c7a19e8a5d",
+			"revisionTime": "2017-05-10T07:48:58Z"
+		},
+		{
+			"checksumSHA1": "1WzGQZpOP/+SGSEQOvEwbtkh1Yg=",
+			"path": "github.com/mcubik/goverreport",
+			"revision": "1479931777d02f80f0998deb1b6c51abe869b12b",
+			"revisionTime": "2018-01-28T17:45:08Z"
+		},
+		{
+			"path": "github.com/nsf/gocode",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "WY8p2ZNGyl69P1tcVc5HFal/Ng0=",
+			"path": "github.com/olekukonko/tablewriter",
+			"revision": "96aac992fc8b1a4c83841a6c3e7178d20d989625",
+			"revisionTime": "2018-01-05T11:11:33Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "792786c7400a136282c1664665ae0a8db921c6c2",
+			"revisionTime": "2016-01-10T10:55:54Z"
+		},
+		{
+			"checksumSHA1": "Fx6WoUKC22vPAzbfhfgvIvhqP+8=",
+			"path": "github.com/stretchr/objx",
+			"revision": "fcc2171a54b5f5bdfabf4e6a698a7cd11d4f65cd",
+			"revisionTime": "2018-01-28T19:41:45Z"
+		},
+		{
+			"checksumSHA1": "Lo9QpTOil7/YV9K2IdHgK1nfFGc=",
+			"path": "github.com/stretchr/testify",
+			"revision": "87b1dfb5b2fa649f52695dd9eae19abe404a4308",
+			"revisionTime": "2017-12-31T12:27:32Z"
+		},
+		{
+			"checksumSHA1": "uyVU5fRfEK17QZuODRjeZX8zDqg=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "87b1dfb5b2fa649f52695dd9eae19abe404a4308",
+			"revisionTime": "2017-12-31T12:27:32Z"
+		},
+		{
+			"checksumSHA1": "fg3TzS9/QK3wZbzei3Z6O8XPLHg=",
+			"path": "github.com/stretchr/testify/http",
+			"revision": "87b1dfb5b2fa649f52695dd9eae19abe404a4308",
+			"revisionTime": "2017-12-31T12:27:32Z"
+		},
+		{
+			"checksumSHA1": "haazOUDtMbWrcmqagDwx8xG2Fus=",
+			"path": "github.com/stretchr/testify/mock",
+			"revision": "87b1dfb5b2fa649f52695dd9eae19abe404a4308",
+			"revisionTime": "2017-12-31T12:27:32Z"
+		},
+		{
+			"path": "go",
+			"revision": ""
+		},
+		{
+			"checksumSHA1": "w/OExaIcqB7E5IG5097RPHtOlzc=",
+			"path": "golang.org/x/tools/cover",
+			"revision": "25101aadb97aa42907eee6a238d6d26a6cb3c756",
+			"revisionTime": "2018-01-25T02:48:19Z"
+		},
+		{
+			"checksumSHA1": "qOmvuDm+F+2nQQecUZBVkZrTn6Y=",
+			"path": "gopkg.in/yaml.v2",
+			"revision": "d670f9405373e636a5a2765eea47fac0c9bc91a4",
+			"revisionTime": "2018-01-09T11:43:31Z"
+		}
+	],
+	"rootPath": "github.com/mcubik/goverreport"
+}
