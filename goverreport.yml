@@ -1,0 +1,4 @@
+root: "github.com/mcubik/goverreport"
+exclusions: [test, vendor]
+threshold: 80
+thresholdType: stmt

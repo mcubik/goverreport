@@ -1,30 +1,37 @@
 package report
 
 import (
+	"errors"
 	"fmt"
 	"golang.org/x/tools/cover"
 	"sort"
 	"strings"
 )
 
-type CoverInfo struct {
+// Coverage summary for a file or module
+type Summary struct {
 	Name                                       string
 	Blocks, Stmts, MissingBlocks, MissingStmts int
 	BlockCoverage, StmtCoverage                float64
 }
 
-type CoverReport struct {
-	Total CoverInfo
-	Files []CoverInfo
+// Report of the coverage results
+type Report struct {
+	Total Summary // Global coverage
+	Files []Summary // Coverage by file
 }
 
-func GenerateReport(coverprofile string, root string, exclusions []string, sortBy, order string) (CoverReport, error) {
+// Generates a coverage report given the coverage profile file, and the following configurations:
+// exclusions: packages to be excluded (if a package is excluded, all its subpackages are excluded as well)
+// sortBy: the order in which the files will be sorted in the report (see sortResults)
+// order: the direction of the the sorting
+func GenerateReport(coverprofile string, root string, exclusions []string, sortBy, order string) (Report, error) {
 	profiles, err := cover.ParseProfiles(coverprofile)
 	if err != nil {
-		return CoverReport{}, fmt.Errorf("Invalid coverprofile: %s", err)
+		return Report{}, fmt.Errorf("Invalid coverprofile: '%s'", err)
 	}
-	global := &coverAcc{name: "Total"}
-	coverByFile := make(map[string]*coverAcc)
+	total := &accumulator{name: "Total"}
+	files := make(map[string]*accumulator)
 	for _, profile := range profiles {
 		var fileName string
 		if root == "" {
@@ -41,81 +48,104 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 		if skip {
 			continue
 		}
-		fileCover, ok := coverByFile[fileName]
+		fileCover, ok := files[fileName]
 		if !ok {
-			fileCover = &coverAcc{name: fileName}
-			coverByFile[fileName] = fileCover
+			fileCover = &accumulator{name: fileName}
+			files[fileName] = fileCover
 		}
 		for _, block := range profile.Blocks {
-			global.addBlock(block)
-			fileCover.addBlock(block)
+			total.add(block)
+			fileCover.add(block)
 		}
 	}
-	return makeReport(global, coverByFile, sortBy, order), nil
+	return makeReport(total, files, sortBy, order)
 }
 
-func makeReport(global *coverAcc, coverByFile map[string]*coverAcc, sortBy, order string) CoverReport {
-	fileReports := make([]CoverInfo, 0, len(coverByFile))
-	for _, fileCover := range coverByFile {
-		fileReports = append(fileReports, fileCover.report())
+// Creates a Report struct from the coverage sumarization results
+func makeReport(total *accumulator, files map[string]*accumulator, sortBy, order string) (Report, error) {
+	fileReports := make([]Summary, 0, len(files))
+	for _, fileCover := range files {
+		fileReports = append(fileReports, fileCover.results())
 	}
-	sortResults(fileReports, sortBy, order)
-	return CoverReport{
-		Total: global.report(),
-		Files: fileReports}
+	if err := sortResults(fileReports, sortBy, order); err != nil {
+		return Report{}, err
+	}
+	return Report{
+		Total: total.results(),
+		Files: fileReports}, nil
 }
 
-type coverAcc struct {
+// Accumulates the coverage of a file and returns a summary
+type accumulator struct {
 	name                                       string
 	blocks, stmts, coveredBlocks, coveredStmts int
 }
 
-func (c *coverAcc) report() CoverInfo {
-	return CoverInfo{
-		Name:          c.name,
-		Blocks:        c.blocks,
-		Stmts:         c.stmts,
-		MissingBlocks: c.blocks - c.coveredBlocks,
-		MissingStmts:  c.stmts - c.coveredStmts,
-		BlockCoverage: float64(c.coveredBlocks) / float64(c.blocks) * 100,
-		StmtCoverage:  float64(c.coveredStmts) / float64(c.stmts) * 100}
-}
-
-func (c *coverAcc) addBlock(block cover.ProfileBlock) {
-	c.blocks++
-	c.stmts += block.NumStmt
+// Accumulates a profile block
+func (a *accumulator) add(block cover.ProfileBlock) {
+	a.blocks++
+	a.stmts += block.NumStmt
 	if block.Count > 0 {
-		c.coveredBlocks++
-		c.coveredStmts += block.NumStmt
+		a.coveredBlocks++
+		a.coveredStmts += block.NumStmt
 	}
 }
 
-func sortResults(reports []CoverInfo, mode string, order string) {
-	applyOrder := func(b bool) bool { return b }
-	if order == "desc" {
-		applyOrder = func(b bool) bool { return !b }
+func (a *accumulator) results() Summary {
+	return Summary{
+		Name:          a.name,
+		Blocks:        a.blocks,
+		Stmts:         a.stmts,
+		MissingBlocks: a.blocks - a.coveredBlocks,
+		MissingStmts:  a.stmts - a.coveredStmts,
+		BlockCoverage: float64(a.coveredBlocks) / float64(a.blocks) * 100,
+		StmtCoverage:  float64(a.coveredStmts) / float64(a.stmts) * 100}
+}
+
+// Sorts the individual coverage reports by a given column
+// (block --block cover--, stmt, --stmt cover--, missing-blocks or missing-stmts)
+// and a sorting direction (asc or desc)
+func sortResults(reports []Summary, mode string, order string) error {
+	var reverse bool
+	var less func(i, j int) bool
+	switch order {
+	case "asc":
+		reverse = false
+	case "desc":
+		reverse = true
+	default:
+		return errors.New("Order must be either asc or desc")
 	}
-	if mode == "filename" {
-		sort.Slice(reports, func(i, j int) bool {
-			return applyOrder(reports[i].Name < reports[j].Name)
-		})
-	} else if mode == "block" {
-		sort.Slice(reports, func(i, j int) bool {
-			return applyOrder(reports[i].BlockCoverage < reports[j].BlockCoverage)
-		})
-	} else if mode == "stmt" {
-		sort.Slice(reports, func(i, j int) bool {
-			return applyOrder(reports[j].StmtCoverage < reports[j].StmtCoverage)
-		})
-	} else if mode == "missing-blocks" {
-		sort.Slice(reports, func(i, j int) bool {
-			return applyOrder(reports[i].MissingBlocks < reports[j].MissingBlocks)
-		})
-	} else if mode == "missing-blocks" {
-		sort.Slice(reports, func(i, j int) bool {
-			return applyOrder(reports[i].MissingStmts < reports[j].MissingStmts)
-		})
-	} else {
-		panic(fmt.Sprintf("Sort by %s is not implemented", mode))
+	switch mode {
+	case "filename":
+		less = func(i, j int) bool {
+			return reports[i].Name < reports[j].Name
+		}
+	case "block":
+		less = func(i, j int) bool {
+			return reports[i].BlockCoverage < reports[j].BlockCoverage
+		}
+	case "stmt":
+		less = func(i, j int) bool {
+			return reports[j].StmtCoverage < reports[j].StmtCoverage
+		}
+	case "missing-blocks":
+		less = func(i, j int) bool {
+			return reports[i].MissingBlocks < reports[j].MissingBlocks
+		}
+	case "missing-stmts":
+		less = func(i, j int) bool {
+			return reports[i].MissingStmts < reports[j].MissingStmts
+		}
+	default:
+		return errors.New("Invalid sort colum, must be one of filename, block, stmt, missing-blocks or missing-stmts")
 	}
+	sort.Slice(reports, func(i, j int) bool {
+		if reverse {
+			return !less(i, j)
+		} else {
+			return less(i, j)
+		}
+	})
+	return nil
 }

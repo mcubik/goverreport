@@ -1,87 +1,89 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/mcubik/goverreport/report"
 	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v2"
+	"io"
 	"io/ioutil"
 	"os"
 )
 
-var (
-	coverprofile, thresholdType, sortBy, order string
-	threshold                                  float64
-)
+type arguments struct {
+	coverprofile, metric, sortBy, order string
+	threshold                           float64
+}
+
+var args arguments
+
+const configFile = "goverreport.yml"
 
 type configuration struct {
 	Root       string   `yaml:"root"`
 	Exclusions []string `yaml:"exclusions"`
+	Threshold  float64  `yaml:"threshold,omitempty"`
+	Metric     string   `yaml:"thresholdType,omitempty"`
 }
 
 func init() {
-	flag.StringVar(&coverprofile, "coverprofile", "coverage.out", "Write a coverage profile to the file after all tests have passed")
-	flag.Float64Var(&threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
-	flag.StringVar(&thresholdType, "type", "block", "Use a specific metric for the threshold: block, line")
-	flag.StringVar(&sortBy, "sort", "filename", "Sort: filename, block, stmt, missing-blocks, missing-stmts")
-	flag.StringVar(&order, "order", "asc", "Sort order: asc, desc")
+	flag.StringVar(&args.coverprofile, "coverprofile", "coverage.out", "Coverage output file")
+	flag.Float64Var(&args.threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
+	flag.StringVar(&args.metric, "metric", "block", "Use a specific metric for the threshold: block, line")
+	flag.StringVar(&args.sortBy, "sort", "filename", "Column to sort by: filename, block, stmt, missing-blocks, missing-stmts")
+	flag.StringVar(&args.order, "order", "asc", "Sort order: asc, desc")
 }
 
 func main() {
 
+	// Parse arguments
 	flag.Parse()
-	config, err := loadConfig()
+	config, err := loadConfig(configFile)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Error loading configuration file: %s", err))
+		fmt.Println(err)
 		os.Exit(2)
 	}
-	report, err := report.GenerateReport(coverprofile, config.Root, config.Exclusions, sortBy, order)
+	passed, err := run(config, args, os.Stdout)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Error generating the report: %s", err))
+		fmt.Println(err)
 		os.Exit(2)
 	}
-
-	printTable(report)
-	if !checkThreshold(threshold, report.Total, thresholdType) {
+	if !passed {
 		os.Exit(1)
 	}
-
-	os.Exit(0)
-
 }
 
-func printTable(report report.CoverReport) {
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{
-		"File", "Blocks", "Missing", "Stmts", "Missing",
-		"Block cover %", "Stmt cover %"})
-	for _, fileCoverage := range report.Files {
-		table.Append(makeRow(fileCoverage))
+// Runs the command
+func run(config configuration, args arguments, writer io.Writer) (bool, error) {
+
+	// Use config values if arguments aren't set
+	if args.metric == "" {
+		args.metric = config.Metric
 	}
-	table.SetFooter(makeRow(report.Total))
-	table.Render()
-}
-
-func checkThreshold(threshold float64, total report.CoverInfo, thresholdType string) bool {
-	if threshold > 0 {
-		if thresholdType == "block" {
-			if total.BlockCoverage < threshold {
-				return false
-			}
-		}
-		if thresholdType == "line" {
-			if total.StmtCoverage < threshold {
-				return false
-			}
-		}
+	if args.threshold == 0 {
+		args.threshold = config.Threshold
 	}
-	return true
+
+	report, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order)
+	if err != nil {
+		return false, err
+	}
+	printTable(report, writer)
+	passed, err := checkThreshold(args.threshold, report.Total, args.metric)
+	if err != nil {
+		return false, err
+	}
+	return passed, nil
 }
 
-func loadConfig() (configuration, error) {
-	var conf configuration
-	data, err := ioutil.ReadFile("coverreport.yml")
+// Loads the report configuration from a yml file
+func loadConfig(filename string) (configuration, error) {
+	conf := configuration{
+		Exclusions: []string{},
+		Metric:     "block"}
+	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
 			return conf, err
@@ -94,7 +96,43 @@ func loadConfig() (configuration, error) {
 	return conf, nil
 }
 
-func makeRow(c report.CoverInfo) []string {
+// Checks whether the coverage is above a threshold value.
+// thresholdType states which value will be used to check the threshold,
+// block coverage (block) or statement coverage (stmt).
+func checkThreshold(threshold float64, total report.Summary, metric string) (bool, error) {
+	if threshold > 0 {
+		switch metric {
+		case "block":
+			if total.BlockCoverage < threshold {
+				return false, nil
+			}
+		case "stmt":
+			if total.StmtCoverage < threshold {
+				return false, nil
+			}
+		default:
+			return false, errors.New("Invalid threshold type, use block or stmt")
+		}
+	}
+	return true, nil
+}
+
+// Prints the report to the terminal
+func printTable(report report.Report, writer io.Writer) {
+	table := tablewriter.NewWriter(writer)
+	table.SetHeader([]string{
+		"File", "Blocks", "Missing", "Stmts", "Missing",
+		"Block cover %", "Stmt cover %"})
+	for _, fileCoverage := range report.Files {
+		table.Append(makeRow(fileCoverage))
+	}
+	table.SetFooter(makeRow(report.Total))
+	table.Render()
+}
+
+// Converts a Summary to a slice of string so that it
+// can be printed in the table
+func makeRow(c report.Summary) []string {
 	return []string{
 		c.Name,
 		fmt.Sprintf("%d", c.Blocks),
