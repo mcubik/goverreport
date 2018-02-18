@@ -5,13 +5,13 @@ import (
 	"flag"
 	"fmt"
 	"github.com/mcubik/goverreport/report"
-	"github.com/olekukonko/tablewriter"
 	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"os"
 )
 
+// Command arguments
 type arguments struct {
 	coverprofile, metric, sortBy, order string
 	threshold                           float64
@@ -21,6 +21,7 @@ var args arguments
 
 const configFile = "goverreport.yml"
 
+// Configuration
 type configuration struct {
 	Root       string   `yaml:"root"`
 	Exclusions []string `yaml:"exclusions"`
@@ -28,6 +29,7 @@ type configuration struct {
 	Metric     string   `yaml:"thresholdType,omitempty"`
 }
 
+// Parser arguments
 func init() {
 	flag.StringVar(&args.coverprofile, "coverprofile", "coverage.out", "Coverage output file")
 	flag.Float64Var(&args.threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
@@ -66,12 +68,12 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 		args.threshold = config.Threshold
 	}
 
-	report, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order)
+	rep, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order)
 	if err != nil {
 		return false, err
 	}
-	printTable(report, writer)
-	passed, err := checkThreshold(args.threshold, report.Total, args.metric)
+	report.PrintTable(rep, writer)
+	passed, err := checkThreshold(args.threshold, rep.Total, args.metric)
 	if err != nil {
 		return false, err
 	}
@@ -115,30 +117,4 @@ func checkThreshold(threshold float64, total report.Summary, metric string) (boo
 		}
 	}
 	return true, nil
-}
-
-// Prints the report to the terminal
-func printTable(report report.Report, writer io.Writer) {
-	table := tablewriter.NewWriter(writer)
-	table.SetHeader([]string{
-		"File", "Blocks", "Missing", "Stmts", "Missing",
-		"Block cover %", "Stmt cover %"})
-	for _, fileCoverage := range report.Files {
-		table.Append(makeRow(fileCoverage))
-	}
-	table.SetFooter(makeRow(report.Total))
-	table.Render()
-}
-
-// Converts a Summary to a slice of string so that it
-// can be printed in the table
-func makeRow(c report.Summary) []string {
-	return []string{
-		c.Name,
-		fmt.Sprintf("%d", c.Blocks),
-		fmt.Sprintf("%d", c.MissingBlocks),
-		fmt.Sprintf("%d", c.Stmts),
-		fmt.Sprintf("%d", c.MissingStmts),
-		fmt.Sprintf("%.2f", c.BlockCoverage),
-		fmt.Sprintf("%.2f", c.StmtCoverage)}
 }

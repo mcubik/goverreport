@@ -17,7 +17,7 @@ type Summary struct {
 
 // Report of the coverage results
 type Report struct {
-	Total Summary // Global coverage
+	Total Summary   // Global coverage
 	Files []Summary // Coverage by file
 }
 
@@ -91,6 +91,7 @@ func (a *accumulator) add(block cover.ProfileBlock) {
 	}
 }
 
+// Creates a summary with the accumulated values
 func (a *accumulator) results() Summary {
 	return Summary{
 		Name:          a.name,
@@ -103,11 +104,11 @@ func (a *accumulator) results() Summary {
 }
 
 // Sorts the individual coverage reports by a given column
-// (block --block cover--, stmt, --stmt cover--, missing-blocks or missing-stmts)
+// (block --block coverage--, stmt --stmt coverage--, missing-blocks or missing-stmts)
 // and a sorting direction (asc or desc)
 func sortResults(reports []Summary, mode string, order string) error {
 	var reverse bool
-	var less func(i, j int) bool
+	var cmp func(i, j int) bool
 	switch order {
 	case "asc":
 		reverse = false
@@ -118,23 +119,23 @@ func sortResults(reports []Summary, mode string, order string) error {
 	}
 	switch mode {
 	case "filename":
-		less = func(i, j int) bool {
+		cmp = func(i, j int) bool {
 			return reports[i].Name < reports[j].Name
 		}
 	case "block":
-		less = func(i, j int) bool {
+		cmp = func(i, j int) bool {
 			return reports[i].BlockCoverage < reports[j].BlockCoverage
 		}
 	case "stmt":
-		less = func(i, j int) bool {
+		cmp = func(i, j int) bool {
 			return reports[j].StmtCoverage < reports[j].StmtCoverage
 		}
 	case "missing-blocks":
-		less = func(i, j int) bool {
+		cmp = func(i, j int) bool {
 			return reports[i].MissingBlocks < reports[j].MissingBlocks
 		}
 	case "missing-stmts":
-		less = func(i, j int) bool {
+		cmp = func(i, j int) bool {
 			return reports[i].MissingStmts < reports[j].MissingStmts
 		}
 	default:
@@ -142,9 +143,9 @@ func sortResults(reports []Summary, mode string, order string) error {
 	}
 	sort.Slice(reports, func(i, j int) bool {
 		if reverse {
-			return !less(i, j)
+			return !cmp(i, j)
 		} else {
-			return less(i, j)
+			return cmp(i, j)
 		}
 	})
 	return nil
