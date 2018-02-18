@@ -8,7 +8,7 @@ before_install:
   - go get -t -v ./...
 
 script:
-  - goverage ./... -coverprofile=coverage.txt
+  - goverage -coverprofile=coverage.txt ./... -v
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t fcaed322-e5fe-4e3d-9f25-06d4b71035e7
