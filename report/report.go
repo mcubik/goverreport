@@ -33,12 +33,7 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 	total := &accumulator{name: "Total"}
 	files := make(map[string]*accumulator)
 	for _, profile := range profiles {
-		var fileName string
-		if root == "" {
-			fileName = profile.FileName
-		} else {
-			fileName = strings.Replace(profile.FileName, root+"/", "", -1)
-		}
+		fileName := normalizeName(profile.FileName, root)
 		skip := false
 		for _, exclusion := range exclusions {
 			if strings.HasPrefix(fileName, exclusion) {
@@ -59,6 +54,14 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 		}
 	}
 	return makeReport(total, files, sortBy, order)
+}
+
+func normalizeName(fileName string, root string) string {
+	if root == "" {
+		return fileName
+	} else {
+		return strings.Replace(fileName, root+"/", "", -1)
+	}
 }
 
 // Creates a Report struct from the coverage sumarization results
