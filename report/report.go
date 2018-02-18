@@ -34,34 +34,37 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 	files := make(map[string]*accumulator)
 	for _, profile := range profiles {
 		fileName := normalizeName(profile.FileName, root)
-		skip := false
-		for _, exclusion := range exclusions {
-			if strings.HasPrefix(fileName, exclusion) {
-				skip = true
-			}
-		}
-		if skip {
+		if isExcluded(fileName, exclusions) {
 			continue
 		}
 		fileCover, ok := files[fileName]
 		if !ok {
+			// Create new accumulator
 			fileCover = &accumulator{name: fileName}
 			files[fileName] = fileCover
 		}
-		for _, block := range profile.Blocks {
-			total.add(block)
-			fileCover.add(block)
-		}
+		total.addAll(profile.Blocks)
+		fileCover.addAll(profile.Blocks)
 	}
 	return makeReport(total, files, sortBy, order)
 }
 
+// Removes root dir part if configured to do so
 func normalizeName(fileName string, root string) string {
 	if root == "" {
 		return fileName
 	} else {
 		return strings.Replace(fileName, root+"/", "", -1)
 	}
+}
+
+func isExcluded(fileName string, exclusions []string) bool {
+	for _, exclusion := range exclusions {
+		if strings.HasPrefix(fileName, exclusion) {
+			return true
+		}
+	}
+	return false
 }
 
 // Creates a Report struct from the coverage sumarization results
@@ -91,6 +94,12 @@ func (a *accumulator) add(block cover.ProfileBlock) {
 	if block.Count > 0 {
 		a.coveredBlocks++
 		a.coveredStmts += block.NumStmt
+	}
+}
+
+func (a *accumulator) addAll(blocks []cover.ProfileBlock) {
+	for _, block := range blocks {
+		a.add(block)
 	}
 }
 
