@@ -12,4 +12,4 @@ script:
   - goverage -coverprofile=coverage.out ./... -v
 
 after_success:
-  - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+  - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken 45wRJ0ed629tPdD9UJ0ZLH3ADruOVRzVU
