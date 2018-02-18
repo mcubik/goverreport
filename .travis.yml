@@ -4,11 +4,12 @@ go:
   1.9.x
 
 before_install:
+  - go get github.com/mattn/goveralls
   - go get -u github.com/haya14busa/goverage
   - go get -t -v ./...
 
 script:
-  - goverage -coverprofile=coverage.txt ./... -v
+  - goverage -coverprofile=coverage.out ./... -v
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t fcaed322-e5fe-4e3d-9f25-06d4b71035e7
+  - goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
