@@ -9,7 +9,7 @@ import (
 
 func TestLoadConfiguration(t *testing.T) {
 	assert := assert.New(t)
-	conf, err := loadConfig("goverreport.yml")
+	conf, err := loadConfig(".goverreport.yml")
 	assert.NoError(err)
 	assert.Equal(conf, configuration{
 		Root:       "github.com/mcubik/goverreport",

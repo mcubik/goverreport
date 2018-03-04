@@ -19,7 +19,7 @@ type arguments struct {
 
 var args arguments
 
-const configFile = "goverreport.yml"
+const configFile = ".goverreport.yml"
 
 // Configuration
 type configuration struct {
