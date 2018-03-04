@@ -1,6 +1,6 @@
-## goverreport 
+# goverreport 
 
-Command line tool for coverage reporting and validation
+Command line tool for coverage reporting and validation.
 
 ![travis-c](https://travis-ci.org/mcubik/goverreport.svg?branch=master)
 [![Coverage Status](https://coveralls.io/repos/github/mcubik/goverreport/badge.svg?branch=master)](https://coveralls.io/github/mcubik/goverreport?branch=master)
@@ -53,4 +53,14 @@ exit status 1
 
 ## Configuration
 
+You can use a fixed thershold by configuring it in the `.goverreport.yml` configuration file. This file also
+let you configure the root path of the project, so that it get stripped from the names of the files, and a set of paths to be excluded from the report.
 
+Here's an example:
+
+```
+threshold: 85
+metric: stmt
+root: "github.com/mcubik/goverreport"
+exclusions: [test/it]
+```
