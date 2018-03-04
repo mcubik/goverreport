@@ -35,7 +35,7 @@ Flags:
 ## Example
 
 ```
-$ goverage -sort=block -order=desc -thershold=85
+$ goverreport -sort=block -order=desc -thershold=85
 
 +------------------+--------+---------+-------+---------+---------------+--------------+
 |       FILE       | BLOCKS | MISSING | STMTS | MISSING | BLOCK COVER % | STMT COVER % |
