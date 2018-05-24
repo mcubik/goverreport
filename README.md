@@ -54,7 +54,7 @@ exit status 1
 ## Configuration
 
 You can use a fixed threshold by configuring it in the `.goverreport.yml` configuration file. This file also
-lets you configure the root path of the project, so that it gets stripped from the names of the files, and a set of paths to be excluded from the report.
+lets you configure the root path of the project, so that it gets stripped from the names of the files, and a set of path prefixes to be excluded from the report.
 
 Here's an example:
 
@@ -62,5 +62,5 @@ Here's an example:
 threshold: 85
 metric: stmt
 root: "github.com/mcubik/goverreport"
-exclusions: [test/it]
+exclusions: [test/it] # Exclude packages prefixed with "test/it"
 ```
