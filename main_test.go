@@ -44,33 +44,33 @@ func TestEmptyConfigWhenFileMissing(t *testing.T) {
 func TestThreshold(t *testing.T) {
 	assert := assert.New(t)
 	summary := report.Summary{BlockCoverage: 79.9, StmtCoverage: 82.3}
-	res, err := checkThreshold(80, summary, "block")
+	passed, err := checkThreshold(80, summary, "block")
 	assert.NoError(err)
-	assert.False(res)
+	assert.False(passed)
 
-	res, err = checkThreshold(79, summary, "block")
+	passed, err = checkThreshold(79, summary, "block")
 	assert.NoError(err)
-	assert.True(res)
+	assert.True(passed)
 
-	res, err = checkThreshold(79.9, summary, "block")
+	passed, err = checkThreshold(79.9, summary, "block")
 	assert.NoError(err)
-	assert.True(res)
+	assert.True(passed)
 
-	res, err = checkThreshold(82, summary, "stmt")
+	passed, err = checkThreshold(82, summary, "stmt")
 	assert.NoError(err)
-	assert.True(res)
+	assert.True(passed)
 
 }
 
 func TestNoThreshold(t *testing.T) {
 	assert := assert.New(t)
 	summary := report.Summary{BlockCoverage: 79.9, StmtCoverage: 82.3}
-	res, err := checkThreshold(0, summary, "block")
+	passed, err := checkThreshold(0, summary, "block")
 	assert.NoError(err)
-	assert.True(res)
+	assert.True(passed)
 }
 
-func TestInvalidTresholdType(t *testing.T) {
+func TestInvalidMetric(t *testing.T) {
 	assert := assert.New(t)
 	summary := report.Summary{BlockCoverage: 79.9, StmtCoverage: 82.3}
 	_, err := checkThreshold(80, summary, "xxxx")
