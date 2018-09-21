@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/mcubik/goverreport/report"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -117,18 +118,48 @@ func TestRunFailInvalidArugment(t *testing.T) {
 	assert.Error(err)
 }
 
-func TestTakesConfigurationIfNotOverriden(t *testing.T) {
+func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
 	assert := assert.New(t)
-	config := configuration{Threshold: 80, Metric: "block"}
+	config := configuration{Threshold: 80, Metric: "stmt"}
 	args := arguments{
 		coverprofile:    "sample_coverage.out",
 		threshold:       0,
-		metric:          "",
+		metric:          "block",
 		sortBy:          "filename",
 		order:           "asc",
 		metricDefaulted: true}
 	buf := bytes.Buffer{}
 	passed, err := run(config, args, &buf)
 	assert.NoError(err)
-	assert.False(passed)
+	assert.True(passed) // Passes stmt coverage
+}
+
+func TestTakesCommandLineArgsOverridesConfiguration(t *testing.T) {
+	assert := assert.New(t)
+	config := configuration{Threshold: 80, Metric: "block"}
+	args := arguments{
+		coverprofile: "sample_coverage.out",
+		threshold:    0,
+		metric:       "stmt",
+		sortBy:       "filename",
+		order:        "asc"}
+	buf := bytes.Buffer{}
+	passed, err := run(config, args, &buf)
+	assert.NoError(err)
+	assert.True(passed) // Passes stmt coverage
+}
+
+func TestMetricArgument(t *testing.T) {
+	os.Args[1] = ""
+	assert := assert.New(t)
+	// Metric default value
+	parseArguments()
+	assert.Equal("block", args.metric)
+	assert.True(args.metricDefaulted)
+
+	// Metric set
+	os.Args[1] = "-metric=stmt"
+	parseArguments()
+	assert.Equal("stmt", args.metric)
+	assert.False(args.metricDefaulted)
 }
