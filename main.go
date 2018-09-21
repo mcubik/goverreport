@@ -98,9 +98,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 
 // Loads the report configuration from a yml file
 func loadConfig(filename string) (configuration, error) {
-	conf := configuration{
-		Exclusions: []string{},
-		Metric:     "block"}
+	conf := configuration{Exclusions: []string{}}
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
