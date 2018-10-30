@@ -134,7 +134,7 @@ func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
 	assert.True(passed) // Passes stmt coverage
 }
 
-func TestTakesCommandLineArgsOverridesConfiguration(t *testing.T) {
+func TestCommandLineArgsOverridesConfiguration(t *testing.T) {
 	assert := assert.New(t)
 	config := configuration{Threshold: 80, Metric: "block"}
 	args := arguments{
