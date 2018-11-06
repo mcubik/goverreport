@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/mcubik/goverreport/report"
@@ -15,6 +14,7 @@ import (
 type arguments struct {
 	coverprofile, metric, sortBy, order string
 	threshold                           float64
+	metricDefaulted                     bool
 }
 
 var args arguments
@@ -36,12 +36,22 @@ func init() {
 	flag.StringVar(&args.order, "order", "asc", "Sort order: asc, desc")
 	flag.Float64Var(&args.threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
 	flag.StringVar(&args.metric, "metric", "block", "Use a specific metric for the threshold: block, stmt")
+	args.metricDefaulted = true
+}
+
+func parseArguments() {
+	flag.Parse()
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "metric" {
+			args.metricDefaulted = false
+		}
+	})
 }
 
 func main() {
 
 	// Parse arguments
-	flag.Parse()
+	parseArguments()
 	config, err := loadConfig(configFile)
 	if err != nil {
 		fmt.Println(err)
@@ -61,11 +71,17 @@ func main() {
 func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 
 	// Use config values if arguments aren't set
-	if args.metric == "" {
-		args.metric = config.Metric
+	var metric string
+	var threshold float64
+	if args.metricDefaulted && config.Metric != "" {
+		metric = config.Metric
+	} else {
+		metric = args.metric
 	}
 	if args.threshold == 0 {
-		args.threshold = config.Threshold
+		threshold = config.Threshold
+	} else {
+		threshold = args.threshold
 	}
 
 	rep, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order)
@@ -73,7 +89,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 		return false, err
 	}
 	report.PrintTable(rep, writer)
-	passed, err := checkThreshold(args.threshold, rep.Total, args.metric)
+	passed, err := checkThreshold(threshold, rep.Total, metric)
 	if err != nil {
 		return false, err
 	}
@@ -82,9 +98,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 
 // Loads the report configuration from a yml file
 func loadConfig(filename string) (configuration, error) {
-	conf := configuration{
-		Exclusions: []string{},
-		Metric:     "block"}
+	conf := configuration{Exclusions: []string{}}
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -99,7 +113,7 @@ func loadConfig(filename string) (configuration, error) {
 }
 
 // Checks whether the coverage is above a threshold value.
-// thresholdType states which value will be used to check the threshold,
+// metric states which value will be used to check the threshold,
 // block coverage (block) or statement coverage (stmt).
 func checkThreshold(threshold float64, total report.Summary, metric string) (bool, error) {
 	if threshold > 0 {
@@ -113,7 +127,7 @@ func checkThreshold(threshold float64, total report.Summary, metric string) (boo
 				return false, nil
 			}
 		default:
-			return false, errors.New("Invalid threshold type, use 'block' or 'stmt'")
+			return false, fmt.Errorf("Invalid metric '%s', use 'block' or 'stmt'", metric)
 		}
 	}
 	return true, nil

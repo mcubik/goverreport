@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"github.com/mcubik/goverreport/report"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
@@ -18,7 +19,7 @@ func TestLoadConfiguration(t *testing.T) {
 		Metric:     "stmt"})
 }
 
-func TestDefaultConfig(t *testing.T) {
+func TestEmptyConfig(t *testing.T) {
 	assert := assert.New(t)
 	conf, err := loadConfig("emptyconfig.yml")
 	assert.NoError(err)
@@ -26,10 +27,10 @@ func TestDefaultConfig(t *testing.T) {
 		Root:       "",
 		Exclusions: []string{},
 		Threshold:  0,
-		Metric:     "block"})
+		Metric:     ""})
 }
 
-func TestDefaultConfigWhenFileMissing(t *testing.T) {
+func TestEmptyConfigWhenFileMissing(t *testing.T) {
 	assert := assert.New(t)
 	conf, err := loadConfig("xxxxxx.yml")
 	assert.NoError(err)
@@ -37,7 +38,7 @@ func TestDefaultConfigWhenFileMissing(t *testing.T) {
 		Root:       "",
 		Exclusions: []string{},
 		Threshold:  0,
-		Metric:     "block"})
+		Metric:     ""})
 }
 
 func TestThreshold(t *testing.T) {
@@ -117,17 +118,48 @@ func TestRunFailInvalidArugment(t *testing.T) {
 	assert.Error(err)
 }
 
-func TestTakesConfigurationIfNotOverriden(t *testing.T) {
+func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
+	assert := assert.New(t)
+	config := configuration{Threshold: 80, Metric: "stmt"}
+	args := arguments{
+		coverprofile:    "sample_coverage.out",
+		threshold:       0,
+		metric:          "block",
+		sortBy:          "filename",
+		order:           "asc",
+		metricDefaulted: true}
+	buf := bytes.Buffer{}
+	passed, err := run(config, args, &buf)
+	assert.NoError(err)
+	assert.True(passed) // Passes stmt coverage
+}
+
+func TestCommandLineArgsOverridesConfiguration(t *testing.T) {
 	assert := assert.New(t)
 	config := configuration{Threshold: 80, Metric: "block"}
 	args := arguments{
 		coverprofile: "sample_coverage.out",
 		threshold:    0,
-		metric:       "",
+		metric:       "stmt",
 		sortBy:       "filename",
 		order:        "asc"}
 	buf := bytes.Buffer{}
 	passed, err := run(config, args, &buf)
 	assert.NoError(err)
-	assert.False(passed)
+	assert.True(passed) // Passes stmt coverage
+}
+
+func TestMetricArgument(t *testing.T) {
+	os.Args[1] = ""
+	assert := assert.New(t)
+	// Metric default value
+	parseArguments()
+	assert.Equal("block", args.metric)
+	assert.True(args.metricDefaulted)
+
+	// Metric set
+	os.Args[1] = "-metric=stmt"
+	parseArguments()
+	assert.Equal("stmt", args.metric)
+	assert.False(args.metricDefaulted)
 }
