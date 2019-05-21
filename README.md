@@ -60,7 +60,7 @@ Here's an example:
 
 ```
 threshold: 85
-metric: stmt
+thresholdType: stmt
 root: "github.com/mcubik/goverreport"
 exclusions: [test/it] # Exclude packages prefixed with "test/it"
 ```
