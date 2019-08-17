@@ -15,6 +15,7 @@ func PrintTable(report Report, writer io.Writer) {
 	for _, fileCoverage := range report.Files {
 		table.Append(makeRow(fileCoverage))
 	}
+    table.SetAutoFormatHeaders(false)
 	table.SetFooter(makeRow(report.Total))
 	table.Render()
 }

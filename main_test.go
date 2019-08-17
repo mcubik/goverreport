@@ -81,7 +81,7 @@ func TestRun(t *testing.T) {
 	assert := assert.New(t)
 	args := arguments{
 		coverprofile: "sample_coverage.out",
-		threshold:    80,
+		threshold:    82,
 		metric:       "block",
 		sortBy:       "filename",
 		order:        "asc"}
@@ -89,7 +89,7 @@ func TestRun(t *testing.T) {
 	passed, err := run(configuration{}, args, &buf)
 	assert.NoError(err)
 	assert.False(passed)
-	assert.Contains(buf.String(), "TOTAL", "Table generated")
+	assert.Contains(buf.String(), "Total", "Table generated")
 }
 
 func TestRunAboveThreshold(t *testing.T) {
