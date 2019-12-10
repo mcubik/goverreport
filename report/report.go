@@ -140,7 +140,7 @@ func sortResults(reports []Summary, mode string, order string) error {
 		}
 	case "stmt":
 		cmp = func(i, j int) bool {
-			return reports[j].StmtCoverage < reports[j].StmtCoverage
+			return reports[i].StmtCoverage < reports[j].StmtCoverage
 		}
 	case "missing-blocks":
 		cmp = func(i, j int) bool {
