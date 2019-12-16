@@ -60,6 +60,9 @@ func TestThreshold(t *testing.T) {
 	assert.NoError(err)
 	assert.True(passed)
 
+	passed, err = checkThreshold(83, summary, "stmt")
+	assert.NoError(err)
+	assert.False(passed)
 }
 
 func TestNoThreshold(t *testing.T) {
@@ -162,4 +165,39 @@ func TestMetricArgument(t *testing.T) {
 	parseArguments()
 	assert.Equal("stmt", args.metric)
 	assert.False(args.metricDefaulted)
+}
+
+func TestRunPackages(t *testing.T) {
+	assert := assert.New(t)
+	args := arguments{
+		coverprofile: "sample_coverage.out",
+		packages:     true,
+		sortBy:       "package",
+		order:        "asc"}
+	buf := bytes.Buffer{}
+	passed, err := run(configuration{}, args, &buf)
+	assert.NoError(err)
+	assert.True(passed)
+	assert.Contains(buf.String(), "Package", "Column title is package")
+	assert.Contains(buf.String(), "| github.com/mcubik/goverreport ", "Package .")
+	assert.Contains(buf.String(), "| github.com/mcubik/goverreport/report |", "Package ./report")
+}
+
+func TestRunPackagesWithRoot(t *testing.T) {
+	assert := assert.New(t)
+	config := configuration{
+		Root: "github.com/mcubik/goverreport",
+	}
+	args := arguments{
+		coverprofile: "sample_coverage.out",
+		packages:     true,
+		sortBy:       "package",
+		order:        "asc"}
+	buf := bytes.Buffer{}
+	passed, err := run(config, args, &buf)
+	assert.NoError(err)
+	assert.True(passed)
+	assert.Contains(buf.String(), "Package", "Column title is package")
+	assert.Contains(buf.String(), "| . ", "Package .")
+	assert.Contains(buf.String(), "| ./report |", "Package ./report")
 }
