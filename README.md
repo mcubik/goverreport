@@ -1,4 +1,4 @@
-# goverreport 
+# goverreport
 
 Command line tool for coverage reporting and validation.
 
@@ -8,7 +8,7 @@ Command line tool for coverage reporting and validation.
 
 ## Installation
 
-```
+```shell
 go get -u github.com/mcubik/goverreport
 ```
 
@@ -16,27 +16,28 @@ go get -u github.com/mcubik/goverreport
 
 `goverreport` reads a coverage profile and prints a report on the terminal. Optionally, it can also validate a coverage threshold.
 
-```
+```none
 Usage: goverreport [flags] -coverprofile=coverprofile.out
 
 Flags:
   -coverprofile string
-    	Coverage output file (default "coverage.out")
-  -order string
-    	Sort order: asc, desc (default "asc")
-  -sort string
-    	Column to sort by: filename, block, stmt, missing-blocks, missing-stmts (default "filename")
-  -threshold float
-    	Return an error code of 1 if the coverage is below a threshold
+        Coverage output file (default "coverage.out")
   -metric string
-    	Use a specific metric for the threshold: block, stmt (default "block")
+        Use a specific metric for the threshold: block, stmt (default "block")
+  -order string
+        Sort order: asc, desc (default "asc")
+  -packages
+        Report coverage per package instead of per file
+  -sort string
+        Column to sort by: filename, block, stmt, missing-blocks, missing-stmts (default "filename")
+  -threshold float
+        Return an error code of 1 if the coverage is below a threshold
 ```
 
 ## Example
 
-```
+```shell
 $ goverreport -sort=block -order=desc -threshold=85
-
 +------------------+--------+---------+-------+---------+---------------+--------------+
 |       FILE       | BLOCKS | MISSING | STMTS | MISSING | BLOCK COVER % | STMT COVER % |
 +------------------+--------+---------+-------+---------+---------------+--------------+
@@ -50,7 +51,6 @@ exit status 1
 
 ```
 
-
 ## Configuration
 
 You can use a fixed threshold by configuring it in the `.goverreport.yml` configuration file. This file also
@@ -58,7 +58,7 @@ lets you configure the root path of the project, so that it gets stripped from t
 
 Here's an example:
 
-```
+```none
 threshold: 85
 thresholdType: stmt
 root: "github.com/mcubik/goverreport"
