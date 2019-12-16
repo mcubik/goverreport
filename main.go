@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mcubik/goverreport/report"
-	"gopkg.in/yaml.v2"
 	"io"
 	"io/ioutil"
 	"os"
+
+	"github.com/mcubik/goverreport/report"
+	"gopkg.in/yaml.v2"
 )
 
 // Command arguments
@@ -15,6 +16,7 @@ type arguments struct {
 	coverprofile, metric, sortBy, order string
 	threshold                           float64
 	metricDefaulted                     bool
+	packages                            bool
 }
 
 var args arguments
@@ -32,10 +34,11 @@ type configuration struct {
 // Parser arguments
 func init() {
 	flag.StringVar(&args.coverprofile, "coverprofile", "coverage.out", "Coverage output file")
-	flag.StringVar(&args.sortBy, "sort", "filename", "Column to sort by: filename, block, stmt, missing-blocks, missing-stmts")
+	flag.StringVar(&args.sortBy, "sort", "filename", "Column to sort by: filename, package, block, stmt, missing-blocks, missing-stmts")
 	flag.StringVar(&args.order, "order", "asc", "Sort order: asc, desc")
 	flag.Float64Var(&args.threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
 	flag.StringVar(&args.metric, "metric", "block", "Use a specific metric for the threshold: block, stmt")
+	flag.BoolVar(&args.packages, "packages", false, "Report coverage per package instead of per file")
 	args.metricDefaulted = true
 }
 
@@ -84,11 +87,11 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 		threshold = args.threshold
 	}
 
-	rep, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order)
+	rep, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order, args.packages)
 	if err != nil {
 		return false, err
 	}
-	report.PrintTable(rep, writer)
+	report.PrintTable(rep, writer, args.packages)
 	passed, err := checkThreshold(threshold, rep.Total, metric)
 	if err != nil {
 		return false, err

@@ -3,9 +3,11 @@ package report
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/tools/cover"
+	"path/filepath"
 	"sort"
 	"strings"
+
+	"golang.org/x/tools/cover"
 )
 
 // Coverage summary for a file or module
@@ -25,7 +27,7 @@ type Report struct {
 // exclusions: packages to be excluded (if a package is excluded, all its subpackages are excluded as well)
 // sortBy: the order in which the files will be sorted in the report (see sortResults)
 // order: the direction of the the sorting
-func GenerateReport(coverprofile string, root string, exclusions []string, sortBy, order string) (Report, error) {
+func GenerateReport(coverprofile string, root string, exclusions []string, sortBy, order string, packages bool) (Report, error) {
 	profiles, err := cover.ParseProfiles(coverprofile)
 	if err != nil {
 		return Report{}, fmt.Errorf("Invalid coverprofile: '%s'", err)
@@ -33,7 +35,7 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 	total := &accumulator{name: "Total"}
 	files := make(map[string]*accumulator)
 	for _, profile := range profiles {
-		fileName := normalizeName(profile.FileName, root)
+		fileName := normalizeName(profile.FileName, root, packages)
 		if isExcluded(fileName, exclusions) {
 			continue
 		}
@@ -50,12 +52,18 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 }
 
 // Removes root dir part if configured to do so
-func normalizeName(fileName string, root string) string {
+func normalizeName(fileName string, root string, packages bool) string {
+	if packages {
+		fileName = filepath.Dir(fileName)
+	}
+
 	if root == "" {
 		return fileName
-	} else {
-		return strings.Replace(fileName, root+"/", "", -1)
 	}
+	if packages {
+		return "." + strings.Replace(fileName, root, "", -1)
+	}
+	return strings.Replace(fileName, root, "", -1)
 }
 
 func isExcluded(fileName string, exclusions []string) bool {
@@ -130,7 +138,7 @@ func sortResults(reports []Summary, mode string, order string) error {
 		return errors.New("Order must be either asc or desc")
 	}
 	switch mode {
-	case "filename":
+	case "filename", "package":
 		cmp = func(i, j int) bool {
 			return reports[i].Name < reports[j].Name
 		}
@@ -151,7 +159,7 @@ func sortResults(reports []Summary, mode string, order string) error {
 			return reports[i].MissingStmts < reports[j].MissingStmts
 		}
 	default:
-		return errors.New("Invalid sort colum, must be one of filename, block, stmt, missing-blocks or missing-stmts")
+		return errors.New("Invalid sort colum, must be one of filename, package, block, stmt, missing-blocks or missing-stmts")
 	}
 	sort.Slice(reports, func(i, j int) bool {
 		if reverse {

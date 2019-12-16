@@ -2,20 +2,27 @@ package report
 
 import (
 	"fmt"
-	"github.com/olekukonko/tablewriter"
 	"io"
+
+	"github.com/olekukonko/tablewriter"
 )
 
 // Prints the report to the terminal
-func PrintTable(report Report, writer io.Writer) {
+func PrintTable(report Report, writer io.Writer, packages bool) {
+	item := "File"
+	if packages {
+		item = "Package"
+	}
 	table := tablewriter.NewWriter(writer)
+	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT})
+	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
 	table.SetHeader([]string{
-		"File", "Blocks", "Missing", "Stmts", "Missing",
+		item, "Blocks", "Missing", "Stmts", "Missing",
 		"Block cover %", "Stmt cover %"})
 	for _, fileCoverage := range report.Files {
 		table.Append(makeRow(fileCoverage))
 	}
-    table.SetAutoFormatHeaders(false)
+	table.SetAutoFormatHeaders(false)
 	table.SetFooter(makeRow(report.Total))
 	table.Render()
 }
