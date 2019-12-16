@@ -29,7 +29,7 @@ Flags:
   -packages
         Report coverage per package instead of per file
   -sort string
-        Column to sort by: filename, block, stmt, missing-blocks, missing-stmts (default "filename")
+        Column to sort by: filename, package, block, stmt, missing-blocks, missing-stmts (default "filename")
   -threshold float
         Return an error code of 1 if the coverage is below a threshold
 ```

@@ -34,7 +34,7 @@ type configuration struct {
 // Parser arguments
 func init() {
 	flag.StringVar(&args.coverprofile, "coverprofile", "coverage.out", "Coverage output file")
-	flag.StringVar(&args.sortBy, "sort", "filename", "Column to sort by: filename, block, stmt, missing-blocks, missing-stmts")
+	flag.StringVar(&args.sortBy, "sort", "filename", "Column to sort by: filename, package, block, stmt, missing-blocks, missing-stmts")
 	flag.StringVar(&args.order, "order", "asc", "Sort order: asc, desc")
 	flag.Float64Var(&args.threshold, "threshold", 0, "Return an error if the coverage is below a threshold")
 	flag.StringVar(&args.metric, "metric", "block", "Use a specific metric for the threshold: block, stmt")

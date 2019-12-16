@@ -138,7 +138,7 @@ func sortResults(reports []Summary, mode string, order string) error {
 		return errors.New("Order must be either asc or desc")
 	}
 	switch mode {
-	case "filename":
+	case "filename", "package":
 		cmp = func(i, j int) bool {
 			return reports[i].Name < reports[j].Name
 		}
@@ -159,7 +159,7 @@ func sortResults(reports []Summary, mode string, order string) error {
 			return reports[i].MissingStmts < reports[j].MissingStmts
 		}
 	default:
-		return errors.New("Invalid sort colum, must be one of filename, block, stmt, missing-blocks or missing-stmts")
+		return errors.New("Invalid sort colum, must be one of filename, package, block, stmt, missing-blocks or missing-stmts")
 	}
 	sort.Slice(reports, func(i, j int) bool {
 		if reverse {
