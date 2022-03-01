@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/mcubik/goverreport/config"
 	"github.com/mcubik/goverreport/report"
 	"gopkg.in/yaml.v3"
 )
@@ -22,14 +23,6 @@ type arguments struct {
 var args arguments
 
 const configFile = ".goverreport.yml"
-
-// Configuration
-type configuration struct {
-	Root       string   `yaml:"root"`
-	Exclusions []string `yaml:"exclusions"`
-	Threshold  float64  `yaml:"threshold,omitempty"`
-	Metric     string   `yaml:"thresholdType,omitempty"`
-}
 
 // Parser arguments
 func init() {
@@ -71,7 +64,7 @@ func main() {
 }
 
 // Runs the command
-func run(config configuration, args arguments, writer io.Writer) (bool, error) {
+func run(config config.Configuration, args arguments, writer io.Writer) (bool, error) {
 
 	// Use config values if arguments aren't set
 	var metric string
@@ -87,7 +80,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 		threshold = args.threshold
 	}
 
-	rep, err := report.GenerateReport(args.coverprofile, config.Root, config.Exclusions, args.sortBy, args.order, args.packages)
+	rep, err := report.GenerateReport(args.coverprofile, config, args.sortBy, args.order, args.packages)
 	if err != nil {
 		return false, err
 	}
@@ -100,8 +93,8 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 }
 
 // Loads the report configuration from a yml file
-func loadConfig(filename string) (configuration, error) {
-	conf := configuration{Exclusions: []string{}}
+func loadConfig(filename string) (config.Configuration, error) {
+	conf := config.Configuration{Exclusions: []string{}}
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -109,7 +102,7 @@ func loadConfig(filename string) (configuration, error) {
 		}
 	} else {
 		if err := yaml.Unmarshal(data, &conf); err != nil {
-			return configuration{}, err
+			return config.Configuration{}, err
 		}
 	}
 	return conf, nil

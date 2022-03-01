@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mcubik/goverreport/config"
 	"github.com/mcubik/goverreport/report"
 	"github.com/mcubik/goverreport/testdata"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func TestLoadConfiguration(t *testing.T) {
 	assert := assert.New(t)
 	conf, err := loadConfig(".goverreport.yml")
 	assert.NoError(err)
-	assert.Equal(conf, configuration{
+	assert.Equal(conf, config.Configuration{
 		Root:       "github.com/mcubik/goverreport",
 		Exclusions: []string{"test", "vendor"},
 		Threshold:  80,
@@ -25,8 +26,7 @@ func TestEmptyConfig(t *testing.T) {
 	assert := assert.New(t)
 	conf, err := loadConfig(testdata.Filename("emptyconfig.yml"))
 	assert.NoError(err)
-	assert.Equal(conf, configuration{
-		Root:       "",
+	assert.Equal(conf, config.Configuration{
 		Exclusions: []string{},
 		Threshold:  0,
 		Metric:     ""})
@@ -36,8 +36,7 @@ func TestEmptyConfigWhenFileMissing(t *testing.T) {
 	assert := assert.New(t)
 	conf, err := loadConfig("xxxxxx.yml")
 	assert.NoError(err)
-	assert.Equal(conf, configuration{
-		Root:       "",
+	assert.Equal(conf, config.Configuration{
 		Exclusions: []string{},
 		Threshold:  0,
 		Metric:     ""})
@@ -91,7 +90,7 @@ func TestRun(t *testing.T) {
 		sortBy:       "filename",
 		order:        "asc"}
 	buf := bytes.Buffer{}
-	passed, err := run(configuration{}, args, &buf)
+	passed, err := run(config.Configuration{}, args, &buf)
 	assert.NoError(err)
 	assert.False(passed)
 	assert.Contains(buf.String(), "Total", "Table generated")
@@ -106,14 +105,14 @@ func TestRunAboveThreshold(t *testing.T) {
 		sortBy:       "filename",
 		order:        "asc"}
 	buf := bytes.Buffer{}
-	passed, err := run(configuration{}, args, &buf)
+	passed, err := run(config.Configuration{}, args, &buf)
 	assert.NoError(err)
 	assert.True(passed)
 }
 
 func TestRunFailInvalidArugment(t *testing.T) {
 	assert := assert.New(t)
-	_, err := run(configuration{}, arguments{
+	_, err := run(config.Configuration{}, arguments{
 		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    80,
 		metric:       "xxx",
@@ -125,7 +124,7 @@ func TestRunFailInvalidArugment(t *testing.T) {
 
 func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
 	assert := assert.New(t)
-	config := configuration{Threshold: 80, Metric: "stmt"}
+	config := config.Configuration{Threshold: 80, Metric: "stmt"}
 	args := arguments{
 		coverprofile:    testdata.Filename("sample_coverage.out"),
 		threshold:       0,
@@ -141,7 +140,7 @@ func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
 
 func TestCommandLineArgsOverridesConfiguration(t *testing.T) {
 	assert := assert.New(t)
-	config := configuration{Threshold: 80, Metric: "block"}
+	config := config.Configuration{Threshold: 80, Metric: "block"}
 	args := arguments{
 		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    0,
@@ -177,7 +176,7 @@ func TestRunPackages(t *testing.T) {
 		sortBy:       "package",
 		order:        "asc"}
 	buf := bytes.Buffer{}
-	passed, err := run(configuration{}, args, &buf)
+	passed, err := run(config.Configuration{}, args, &buf)
 	assert.NoError(err)
 	assert.True(passed)
 	assert.Contains(buf.String(), "Package", "Column title is package")
@@ -187,7 +186,7 @@ func TestRunPackages(t *testing.T) {
 
 func TestRunPackagesWithRoot(t *testing.T) {
 	assert := assert.New(t)
-	config := configuration{
+	config := config.Configuration{
 		Root: "github.com/mcubik/goverreport",
 	}
 	args := arguments{

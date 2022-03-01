@@ -7,6 +7,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/mattn/go-zglob"
+	"github.com/mcubik/goverreport/config"
 	"golang.org/x/tools/cover"
 )
 
@@ -27,7 +29,7 @@ type Report struct {
 // exclusions: packages to be excluded (if a package is excluded, all its subpackages are excluded as well)
 // sortBy: the order in which the files will be sorted in the report (see sortResults)
 // order: the direction of the the sorting
-func GenerateReport(coverprofile string, root string, exclusions []string, sortBy, order string, packages bool) (Report, error) {
+func GenerateReport(coverprofile string, configuration config.Configuration, sortBy, order string, packages bool) (Report, error) {
 	profiles, err := cover.ParseProfiles(coverprofile)
 	if err != nil {
 		return Report{}, fmt.Errorf("Invalid coverprofile: '%s'", err)
@@ -35,8 +37,8 @@ func GenerateReport(coverprofile string, root string, exclusions []string, sortB
 	total := &accumulator{name: "Total"}
 	files := make(map[string]*accumulator)
 	for _, profile := range profiles {
-		fileName := normalizeName(profile.FileName, root, packages)
-		if isExcluded(fileName, exclusions) {
+		fileName := normalizeName(profile.FileName, configuration.Root, packages)
+		if isExcluded(fileName, configuration.Exclusions) {
 			continue
 		}
 		fileCover, ok := files[fileName]
@@ -68,7 +70,7 @@ func normalizeName(fileName string, root string, packages bool) string {
 
 func isExcluded(fileName string, exclusions []string) bool {
 	for _, exclusion := range exclusions {
-		if strings.HasPrefix(fileName, exclusion) {
+		if ok, _ := zglob.Match(exclusion, fileName); ok {
 			return true
 		}
 	}
