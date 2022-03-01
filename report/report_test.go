@@ -3,6 +3,7 @@ package report
 import (
 	"testing"
 
+	"github.com/mcubik/goverreport/testdata"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,7 +58,7 @@ func TestInvalidParameters(t *testing.T) {
 
 func TestReport(t *testing.T) {
 	assert := assert.New(t)
-	report, err := GenerateReport("../sample_coverage.out", "", []string{}, "block", "desc", false)
+	report, err := GenerateReport(testdata.Filename("sample_coverage.out"), "", []string{}, "block", "desc", false)
 	assert.NoError(err)
 	assert.InDelta(81.4, report.Total.BlockCoverage, 0.1)
 	assert.InDelta(81.9, report.Total.StmtCoverage, 0.1)

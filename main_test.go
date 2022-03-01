@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
-	"github.com/mcubik/goverreport/report"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/mcubik/goverreport/report"
+	"github.com/mcubik/goverreport/testdata"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadConfiguration(t *testing.T) {
@@ -21,7 +23,7 @@ func TestLoadConfiguration(t *testing.T) {
 
 func TestEmptyConfig(t *testing.T) {
 	assert := assert.New(t)
-	conf, err := loadConfig("emptyconfig.yml")
+	conf, err := loadConfig(testdata.Filename("emptyconfig.yml"))
 	assert.NoError(err)
 	assert.Equal(conf, configuration{
 		Root:       "",
@@ -83,7 +85,7 @@ func TestInvalidMetric(t *testing.T) {
 func TestRun(t *testing.T) {
 	assert := assert.New(t)
 	args := arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    82,
 		metric:       "block",
 		sortBy:       "filename",
@@ -98,7 +100,7 @@ func TestRun(t *testing.T) {
 func TestRunAboveThreshold(t *testing.T) {
 	assert := assert.New(t)
 	args := arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    75,
 		metric:       "block",
 		sortBy:       "filename",
@@ -112,7 +114,7 @@ func TestRunAboveThreshold(t *testing.T) {
 func TestRunFailInvalidArugment(t *testing.T) {
 	assert := assert.New(t)
 	_, err := run(configuration{}, arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    80,
 		metric:       "xxx",
 		sortBy:       "filename",
@@ -125,7 +127,7 @@ func TestTakesConfigurationIfNotOverridenByCommandLineArgs(t *testing.T) {
 	assert := assert.New(t)
 	config := configuration{Threshold: 80, Metric: "stmt"}
 	args := arguments{
-		coverprofile:    "sample_coverage.out",
+		coverprofile:    testdata.Filename("sample_coverage.out"),
 		threshold:       0,
 		metric:          "block",
 		sortBy:          "filename",
@@ -141,7 +143,7 @@ func TestCommandLineArgsOverridesConfiguration(t *testing.T) {
 	assert := assert.New(t)
 	config := configuration{Threshold: 80, Metric: "block"}
 	args := arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		threshold:    0,
 		metric:       "stmt",
 		sortBy:       "filename",
@@ -170,7 +172,7 @@ func TestMetricArgument(t *testing.T) {
 func TestRunPackages(t *testing.T) {
 	assert := assert.New(t)
 	args := arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		packages:     true,
 		sortBy:       "package",
 		order:        "asc"}
@@ -189,7 +191,7 @@ func TestRunPackagesWithRoot(t *testing.T) {
 		Root: "github.com/mcubik/goverreport",
 	}
 	args := arguments{
-		coverprofile: "sample_coverage.out",
+		coverprofile: testdata.Filename("sample_coverage.out"),
 		packages:     true,
 		sortBy:       "package",
 		order:        "asc"}
