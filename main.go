@@ -90,7 +90,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	report.PrintTable(rep, writer, args.packages)
+	err = report.PrintTable(rep, writer, args.packages)
 	passed, err := checkThreshold(threshold, rep.Total, metric)
 	if err != nil {
 		return false, err
@@ -101,6 +101,7 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 // Loads the report configuration from a yml file
 func loadConfig(filename string) (configuration, error) {
 	conf := configuration{Exclusions: []string{}}
+	// #nosec G304 -- reads fixed local config file ".goverreport.yaml"
 	data, err := os.ReadFile(filename)
 	if err != nil {
 		if !os.IsNotExist(err) {

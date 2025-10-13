@@ -9,9 +9,9 @@ import (
 )
 
 // PrintTable prints the report to the terminal
-func PrintTable(r Report, w io.Writer, packages bool) {
+func PrintTable(r Report, w io.Writer, packages bool) error {
 	// Create table with ASCII border style for compatibility with tests
-	table := tablewriter.NewTable(w, 
+	table := tablewriter.NewTable(w,
 		tablewriter.WithSymbols(tw.NewSymbols(tw.StyleASCII)),
 		tablewriter.WithHeaderAutoFormat(tw.Off), // Disable auto-formatting to preserve case
 	)
@@ -27,13 +27,20 @@ func PrintTable(r Report, w io.Writer, packages bool) {
 
 	// Add rows for all files
 	for _, s := range r.Files {
-		table.Append(makeRow(s))
+		err := table.Append(makeRow(s))
+		if err != nil {
+			return err
+		}
 	}
 
 	// Add footer with totals
 	table.Footer(makeRow(r.Total))
 
-	table.Render()
+	err := table.Render()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Converts a Summary to a slice of string so that it
