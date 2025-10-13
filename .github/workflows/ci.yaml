@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-test-security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21' # adjust to your version
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: |
+          go test -coverprofile=coverage.out -v ./...
+          go run main.go --metric=block --threshold=75
+
+      - name: Run static analysis
+        run: go vet ./...
+
+      - name: Run security check (govulncheck)
+        uses: golang/govulncheck-action@v1
+        continue-on-error: true
+        with:
+          go-version-input: '1.21'
+          vulncheck-version: 'latest'
+
+      - name: Run dependency audit (gosec)
+        uses: securego/gosec@master
+        continue-on-error: true
+        with:
+          args: ./...
