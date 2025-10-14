@@ -16,17 +16,22 @@ func PrintTable(r Report, w io.Writer, packages bool) {
 		tablewriter.WithHeaderAutoFormat(tw.Off), // Disable auto-formatting to preserve case
 	)
 
-	// Set headers to match all columns from makeRow
-	table.Header("Package", "Statements", "Missing", "Stmts", "Missing Stmts", "Block Coverage", "Stmt Coverage")
-
-	// Add rows based on the packages flag
+	// Determine header label based on packages flag
+	item := "File"
 	if packages {
-		for _, s := range r.Files {
-			table.Append(makeRow(s))
-		}
-	} else {
-		table.Append(makeRow(r.Total))
+		item = "Package"
 	}
+
+	// Set headers to match all columns from makeRow
+	table.Header(item, "Blocks", "Missing", "Stmts", "Missing", "Block cover %", "Stmt cover %")
+
+	// Add rows for all files
+	for _, s := range r.Files {
+		table.Append(makeRow(s))
+	}
+
+	// Add footer with totals
+	table.Footer(makeRow(r.Total))
 
 	table.Render()
 }
