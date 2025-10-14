@@ -90,7 +90,11 @@ func run(config configuration, args arguments, writer io.Writer) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	err = report.PrintTable(rep, writer, args.packages)
+
+	if err = report.PrintTable(rep, writer, args.packages); err != nil {
+		return false, err
+	}
+
 	passed, err := checkThreshold(threshold, rep.Total, metric)
 	if err != nil {
 		return false, err

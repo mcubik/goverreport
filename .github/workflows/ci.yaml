@@ -25,7 +25,7 @@ jobs:
       - name: Run tests
         run: |
           go test -coverprofile=coverage.out -v ./...
-          go run main.go --metric=block --threshold=80
+          go run main.go --threshold=80
 
       - name: Run static analysis
         run: go vet ./...
