@@ -5,25 +5,34 @@ import (
 	"io"
 
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
-// Prints the report to the terminal
-func PrintTable(report Report, writer io.Writer, packages bool) {
+// PrintTable prints the report to the terminal
+func PrintTable(r Report, w io.Writer, packages bool) {
+	// Create table with ASCII border style for compatibility with tests
+	table := tablewriter.NewTable(w, 
+		tablewriter.WithSymbols(tw.NewSymbols(tw.StyleASCII)),
+		tablewriter.WithHeaderAutoFormat(tw.Off), // Disable auto-formatting to preserve case
+	)
+
+	// Determine header label based on packages flag
 	item := "File"
 	if packages {
 		item = "Package"
 	}
-	table := tablewriter.NewWriter(writer)
-	table.SetColumnAlignment([]int{tablewriter.ALIGN_LEFT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT, tablewriter.ALIGN_RIGHT})
-	table.SetFooterAlignment(tablewriter.ALIGN_RIGHT)
-	table.SetHeader([]string{
-		item, "Blocks", "Missing", "Stmts", "Missing",
-		"Block cover %", "Stmt cover %"})
-	for _, fileCoverage := range report.Files {
-		table.Append(makeRow(fileCoverage))
+
+	// Set headers to match all columns from makeRow
+	table.Header(item, "Blocks", "Missing", "Stmts", "Missing", "Block cover %", "Stmt cover %")
+
+	// Add rows for all files
+	for _, s := range r.Files {
+		table.Append(makeRow(s))
 	}
-	table.SetAutoFormatHeaders(false)
-	table.SetFooter(makeRow(report.Total))
+
+	// Add footer with totals
+	table.Footer(makeRow(r.Total))
+
 	table.Render()
 }
 
