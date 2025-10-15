@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrintTable_FileMode(t *testing.T) {
@@ -43,7 +44,7 @@ func TestPrintTable_FileMode(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	PrintTable(report, &buf, false) // false = file mode (default)
+	require.NoError(t, PrintTable(report, &buf, false)) // false = file mode (default)
 
 	output := buf.String()
 
@@ -113,13 +114,13 @@ func TestPrintTable_PackageMode(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	PrintTable(report, &buf, true) // true = package mode
+	require.NoError(t, PrintTable(report, &buf, true)) // true = package mode
 
 	output := buf.String()
 
 	// Verify header contains "Package" not "File"
 	assert.Contains(t, output, "Package", "Header should contain 'Package' in package mode")
-	
+
 	// Note: In package mode, the first occurrence of "File" should not be in the header
 	lines := strings.Split(output, "\n")
 	headerFound := false
@@ -176,7 +177,7 @@ func TestPrintTable_EmptyReport(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	PrintTable(report, &buf, false)
+	require.NoError(t, PrintTable(report, &buf, false))
 
 	output := buf.String()
 
@@ -212,7 +213,7 @@ func TestPrintTable_SingleFile(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	PrintTable(report, &buf, false)
+	require.NoError(t, PrintTable(report, &buf, false))
 
 	output := buf.String()
 

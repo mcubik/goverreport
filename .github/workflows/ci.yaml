@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-test-security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21' # adjust to your version
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: |
+          go test -coverprofile=coverage.out -v ./...
+          go run main.go --threshold=80
+
+      - name: Run static analysis
+        run: go vet ./...
+
+      - name: Run security check (gosec)
+        uses: securego/gosec@master
+        with:
+          args: ./...

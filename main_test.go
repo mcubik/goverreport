@@ -2,10 +2,11 @@ package main
 
 import (
 	"bytes"
-	"github.com/mcubik/goverreport/report"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
+
+	"github.com/mcubik/goverreport/report"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLoadConfiguration(t *testing.T) {
